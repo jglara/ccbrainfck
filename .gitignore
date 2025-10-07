@@ -1,0 +1,12 @@
+build/
+.cache/
+.vscode/
+.clangd/
+compile_commands.json
+*.swp
+*.o
+*.a
+*.so
+*.dSYM
+*.obj
+*.exe
