@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(myproj LANGUAGES CXX)
+project(ccbf LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,14 +20,14 @@ if(CCACHE_PROGRAM)
 endif()
 
 # Library and executable
-add_library(myproj_lib
-  src/lib.cpp
-  include/myproj/lib.hpp
+add_library(ccbf_lib
+  src/ccbf.cpp
+  include/ccbf.hpp
 )
-target_include_directories(myproj_lib PUBLIC include)
+target_include_directories(ccbf_lib PUBLIC include)
 
-add_executable(myproj src/main.cpp)
-target_link_libraries(myproj PRIVATE myproj_lib)
+add_executable(ccbf src/main.cpp)
+target_link_libraries(ccbf PRIVATE ccbf_lib)
 
 # GoogleTest via FetchContent
 include(FetchContent)
@@ -39,7 +39,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
-add_executable(myproj_tests test/tests.cpp)
-target_link_libraries(myproj_tests PRIVATE myproj_lib GTest::gtest_main)
+add_executable(ccbf_tests test/tests.cpp)
+target_link_libraries(ccbf_tests PRIVATE ccbf_lib GTest::gtest_main)
 include(GoogleTest)
-gtest_discover_tests(myproj_tests)
+gtest_discover_tests(ccbf_tests)
