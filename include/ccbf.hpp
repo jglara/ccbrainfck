@@ -22,8 +22,8 @@ public:
   explicit BFMachine(std::istream& in, std::ostream& out) : is_(in), os_(out) {}
 };
 
-
-void run(BFMachine bfm, rng::random_access_range auto const& program) {
+std::vector<std::size_t> calculate_jump_table(rng::random_access_range auto const& program)
+{
     auto const program_size = rng::size(program);
     std::vector<std::size_t> jump(program_size, program_size);
 
@@ -49,8 +49,15 @@ void run(BFMachine bfm, rng::random_access_range auto const& program) {
       throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
     }
 
+    return jump;
+}
+
+void run(BFMachine bfm, rng::random_access_range auto const& program) {
+  auto const program_size = rng::size(program);
     std::size_t pc{0};
     std::size_t mp{0};
+
+    std::vector<std::size_t> jump = calculate_jump_table(program);
 
     while (pc < program_size) {
       auto const inst = program[pc];
