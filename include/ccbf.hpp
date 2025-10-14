@@ -1,87 +1,96 @@
 #pragma once
 
-#include <sys/types.h>
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <istream>
+#include <ostream>
 #include <ranges>
-#include <iostream>
-
+#include <stdexcept>
+#include <vector>
 
 namespace rng = std::ranges;
 
 class BFMachine {
-  static constexpr u_int16_t MEMORY_SIZE=30000;
-  std::array<u_int8_t, MEMORY_SIZE> memory_{};
+  static constexpr std::size_t memory_size = 30000;
+
+  std::array<std::uint8_t, memory_size> memory_{};
   std::istream& is_;
   std::ostream& os_;
 
-
  public:
-  explicit BFMachine(std::istream& in, std::ostream &out) : is_(in), os_(out) {}
+  explicit BFMachine(std::istream& in, std::ostream& out) : is_(in), os_(out) {}
+
   void run(rng::random_access_range auto const& program) {
-// Runs a program in the BFMachine
+    auto const program_size = rng::size(program);
+    std::vector<std::size_t> jump_forward(program_size, program_size);
+    std::vector<std::size_t> jump_backward(program_size, program_size);
+    std::vector<std::size_t> loop_stack;
+    loop_stack.reserve(program_size);
 
-  size_t pc{0}; // program counter
-  size_t mp{0}; // memory pointer
-
-  while (pc < std::size(program)) {
-    auto inst = program[pc];
-    switch (inst) {
-    case '>':
-      mp = (mp + 1) % BFMachine::MEMORY_SIZE;
-      break;
-    case '<':
-      mp = (mp==0)?BFMachine::MEMORY_SIZE-1:mp-1;
-      break;
-    case '+':
-      ++memory_[mp];
-      break;
-    case '-':
-      --memory_[mp];
-      break;
-    case '.':
-      os_ << memory_[mp];
-      break;
-    case ',':
-      is_ >> memory_[mp];
-      break;
-    case '[':
-      if (memory_[mp] == 0) {
-        size_t depth{0};        
-        for (++pc;pc<std::size(program); ++pc) {
-          if (program[pc] == ']') {
-            if (depth == 0) {
-              break;
-            } else {
-              --depth;
-            }
-          } else if (program[pc] == '[') {
-            ++depth;
-          }            
+    for (std::size_t i = 0; i < program_size; ++i) {
+      auto const inst = program[i];
+      if (inst == '[') {
+        loop_stack.push_back(i);
+      } else if (inst == ']') {
+        if (loop_stack.empty()) {
+          throw std::runtime_error("Unmatched closing bracket in Brainfuck program");
         }
+        auto const match = loop_stack.back();
+        loop_stack.pop_back();
+        jump_forward[match] = i;
+        jump_backward[i] = match;
       }
-      break;
-    case ']':
-      if (memory_[mp] != 0) {
-        size_t depth{0};
-        for (--pc;pc<std::size(program); --pc) {
-          if (program[pc] == '[') {
-            if (depth == 0) {
-              break;
-            } else {
-              --depth;
-            }
-          } else if (program[pc] == ']') {
-            ++depth;
-          }            
-        }
-      }      
-      break;
     }
-    ++pc;
-  }
 
-}    
-      
-  
+    if (!loop_stack.empty()) {
+      throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
+    }
+
+    std::size_t pc{0};
+    std::size_t mp{0};
+
+    while (pc < program_size) {
+      auto const inst = program[pc];
+      switch (inst) {
+      case '>':
+        mp = (mp + 1) % memory_size;
+        break;
+      case '<':
+        mp = (mp == 0) ? memory_size - 1 : mp - 1;
+        break;
+      case '+':
+        ++memory_[mp];
+        break;
+      case '-':
+        --memory_[mp];
+        break;
+      case '.':
+        os_.put(static_cast<char>(memory_[mp]));
+        break;
+      case ',': {
+        auto const value = is_.get();
+        if (value == std::istream::traits_type::eof()) {
+          memory_[mp] = 0;
+        } else {
+          memory_[mp] = static_cast<std::uint8_t>(value);
+        }
+        break;
+      }
+      case '[':
+        if (memory_[mp] == 0) {
+          pc = jump_forward[pc];
+        }
+        break;
+      case ']':
+        if (memory_[mp] != 0) {
+          pc = jump_backward[pc];
+        }
+        break;
+      default:
+        break;
+      }
+      ++pc;
+    }
+  }
 };

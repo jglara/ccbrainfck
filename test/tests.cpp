@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -50,6 +51,12 @@ TEST(BFMachine, ReadsAndEchoesInputByte) {
   EXPECT_EQ(output[0], 'A');
 }
 
+TEST(BFMachine, SetsCellToZeroOnEOF) {
+  auto const output = run_program(",.");
+  ASSERT_EQ(output.size(), 1u);
+  EXPECT_EQ(output[0], static_cast<char>(0));
+}
+
 TEST(BFMachine, SkipsLoopWhenCellZero) {
   auto const output = run_program("[+++]++.");
   ASSERT_EQ(output.size(), 1u);
@@ -62,3 +69,23 @@ TEST(BFMachine, ExecutesLoopUntilCellZero) {
   EXPECT_EQ(output[0], static_cast<char>(1));
 }
 
+TEST(BFMachine, ThrowsOnUnmatchedClosingBracket) {
+  EXPECT_THROW(run_program("]"), std::runtime_error);
+}
+
+TEST(BFMachine, ThrowsOnUnmatchedOpeningBracket) {
+  EXPECT_THROW(run_program("[+"), std::runtime_error);
+}
+
+TEST(BFMachine, Step2Test) {
+  auto const output = run_program("This is a test Brainf*ck script written"\
+                                  "for Coding Challenges!"\
+                                  "++++++++++[>+>+++>+++++++>++++++++++<<<"\
+                                  "<-]>>>++.>+.+++++++..+++.<<++++++++++++"\
+                                  "++.------------.>-----.>.-----------.++"\
+                                  "+++.+++++.-------.<<.>.>+.-------.+++++"\
+                                  "++++++..-------.+++++++++.-------.--.++"\
+                                  "++++++++++++. What does it do?");
+  ASSERT_EQ(output.size(), 24u);
+  EXPECT_EQ(output, "Hello, Coding Challenges");
+}
