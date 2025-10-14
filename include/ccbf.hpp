@@ -12,16 +12,18 @@
 namespace rng = std::ranges;
 
 class BFMachine {
+public:  
   static constexpr std::size_t memory_size = 30000;
 
   std::array<std::uint8_t, memory_size> memory_{};
   std::istream& is_;
   std::ostream& os_;
 
- public:
   explicit BFMachine(std::istream& in, std::ostream& out) : is_(in), os_(out) {}
+};
 
-  void run(rng::random_access_range auto const& program) {
+
+void run(BFMachine bfm, rng::random_access_range auto const& program) {
     auto const program_size = rng::size(program);
     std::vector<std::size_t> jump_forward(program_size, program_size);
     std::vector<std::size_t> jump_backward(program_size, program_size);
@@ -54,36 +56,36 @@ class BFMachine {
       auto const inst = program[pc];
       switch (inst) {
       case '>':
-        mp = (mp + 1) % memory_size;
+        mp = (mp + 1) % bfm.memory_size;
         break;
       case '<':
-        mp = (mp == 0) ? memory_size - 1 : mp - 1;
+        mp = (mp == 0) ? bfm.memory_size - 1 : mp - 1;
         break;
       case '+':
-        ++memory_[mp];
+        ++bfm.memory_[mp];
         break;
       case '-':
-        --memory_[mp];
+        --bfm.memory_[mp];
         break;
       case '.':
-        os_.put(static_cast<char>(memory_[mp]));
+        bfm.os_.put(static_cast<char>(bfm.memory_[mp]));
         break;
       case ',': {
-        auto const value = is_.get();
+        auto const value = bfm.is_.get();
         if (value == std::istream::traits_type::eof()) {
-          memory_[mp] = 0;
+          bfm.memory_[mp] = 0;
         } else {
-          memory_[mp] = static_cast<std::uint8_t>(value);
+          bfm.memory_[mp] = static_cast<std::uint8_t>(value);
         }
         break;
       }
       case '[':
-        if (memory_[mp] == 0) {
+        if (bfm.memory_[mp] == 0) {
           pc = jump_forward[pc];
         }
         break;
       case ']':
-        if (memory_[mp] != 0) {
+        if (bfm.memory_[mp] != 0) {
           pc = jump_backward[pc];
         }
         break;
@@ -92,5 +94,4 @@ class BFMachine {
       }
       ++pc;
     }
-  }
-};
+}

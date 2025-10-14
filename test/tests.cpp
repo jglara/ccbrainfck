@@ -15,7 +15,7 @@ std::string run_program(std::string_view program, std::string_view input = {}) {
   BFMachine machine{in, out};
 
   std::string program_buffer{program};
-  machine.run(program_buffer);
+  run(machine, program_buffer);
   return out.str();
 }
 

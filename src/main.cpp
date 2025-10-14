@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
       BFMachine bf{std::cin, std::cout};    
       std::cout << "\nCCBF> ";
       std::cin >> program;
-      bf.run(program);
+      run(bf, program);
 
     } while (!program.empty());
   } else {
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     auto input = rng::subrange(std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{});
     std::string program{input.begin(), input.end()};
-    bf.run(program);
+    run(bf, program);
   }
 
   return 0;
