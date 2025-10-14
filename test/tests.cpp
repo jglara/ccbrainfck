@@ -13,9 +13,10 @@ std::string run_program(std::string_view program, std::string_view input = {}) {
   std::istringstream in{std::string{input}};
   std::ostringstream out;
   BFMachine machine{in, out};
+  machine.reset();
 
   std::string program_buffer{program};
-  run(machine, program_buffer);
+  machine.run(program_buffer);
   return out.str();
 }
 

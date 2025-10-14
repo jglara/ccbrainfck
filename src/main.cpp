@@ -1,5 +1,4 @@
 #include "ccbf.hpp"
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -9,27 +8,31 @@
 namespace rng = std::ranges;
 
 int main(int argc, char* argv[]) {
+  BFMachine machine{std::cin, std::cout};
+
   if (argc == 1) {
     std::string program;
-    do {
-      program.clear();
-      BFMachine bf{std::cin, std::cout};    
+    while (true) {
       std::cout << "\nCCBF> ";
-      std::cin >> program;
-      run(bf, program);
-
-    } while (!program.empty());
+      if (!std::getline(std::cin, program)) {
+        break;
+      }
+      if (program.empty()) {
+        break;
+      }
+      machine.run(program);
+    }
   } else {
     std::ifstream ifs{argv[1], std::ios::in};
-    BFMachine bf{std::cin, std::cout};
     if (!ifs.is_open()) {
       std::cerr << "Failed to open file: " << argv[1] << '\n';
       return 1;
     }
 
-    auto input = rng::subrange(std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{});
+    auto const input =
+        rng::subrange(std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{});
     std::string program{input.begin(), input.end()};
-    run(bf, program);
+    machine.run(program);
   }
 
   return 0;

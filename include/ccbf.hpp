@@ -12,21 +12,74 @@
 namespace rng = std::ranges;
 
 class BFMachine {
-public:  
+ public:
   static constexpr std::size_t memory_size = 30000;
 
-  std::array<std::uint8_t, memory_size> memory_{};
-  std::istream& is_;
-  std::ostream& os_;
+  explicit BFMachine(std::istream& in, std::ostream& out)
+      : memory_{}, is_(in), os_(out) {}
 
-  explicit BFMachine(std::istream& in, std::ostream& out) : is_(in), os_(out) {}
-};
+  void reset() {
+    memory_.fill(0);
+  }
 
-std::vector<std::size_t> calculate_jump_table(rng::random_access_range auto const& program)
-{
+  void run(rng::random_access_range auto const& program) {
+    reset();
+
     auto const program_size = rng::size(program);
-    std::vector<std::size_t> jump(program_size, program_size);
+    auto const jumps = build_jump_table(program);
 
+    std::size_t pc{0};
+    std::size_t mp{0};
+
+    while (pc < program_size) {
+      auto const inst = program[pc];
+      switch (inst) {
+      case '>':
+        mp = (mp + 1) % memory_size;
+        break;
+      case '<':
+        mp = (mp == 0) ? memory_size - 1 : mp - 1;
+        break;
+      case '+':
+        ++memory_[mp];
+        break;
+      case '-':
+        --memory_[mp];
+        break;
+      case '.':
+        os_.put(static_cast<char>(memory_[mp]));
+        break;
+      case ',': {
+        auto const value = is_.get();
+        if (value == std::istream::traits_type::eof()) {
+          memory_[mp] = 0;
+        } else {
+          memory_[mp] = static_cast<std::uint8_t>(value);
+        }
+        break;
+      }
+      case '[':
+        if (memory_[mp] == 0) {
+          pc = jumps[pc];
+        }
+        break;
+      case ']':
+        if (memory_[mp] != 0) {
+          pc = jumps[pc];
+        }
+        break;
+      default:
+        break;
+      }
+      ++pc;
+    }
+  }
+
+ private:
+  template <typename Program>
+  static std::vector<std::size_t> build_jump_table(Program const& program) {
+    auto const program_size = rng::size(program);
+    std::vector<std::size_t> jumps(program_size, program_size);
     std::vector<std::size_t> loop_stack;
     loop_stack.reserve(program_size);
 
@@ -40,8 +93,8 @@ std::vector<std::size_t> calculate_jump_table(rng::random_access_range auto cons
         }
         auto const match = loop_stack.back();
         loop_stack.pop_back();
-        jump[match] = i;
-        jump[i] = match;
+        jumps[match] = i;
+        jumps[i] = match;
       }
     }
 
@@ -49,56 +102,10 @@ std::vector<std::size_t> calculate_jump_table(rng::random_access_range auto cons
       throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
     }
 
-    return jump;
-}
+    return jumps;
+  }
 
-void run(BFMachine bfm, rng::random_access_range auto const& program) {
-  auto const program_size = rng::size(program);
-    std::size_t pc{0};
-    std::size_t mp{0};
-
-    std::vector<std::size_t> jump = calculate_jump_table(program);
-
-    while (pc < program_size) {
-      auto const inst = program[pc];
-      switch (inst) {
-      case '>':
-        mp = (mp + 1) % bfm.memory_size;
-        break;
-      case '<':
-        mp = (mp == 0) ? bfm.memory_size - 1 : mp - 1;
-        break;
-      case '+':
-        ++bfm.memory_[mp];
-        break;
-      case '-':
-        --bfm.memory_[mp];
-        break;
-      case '.':
-        bfm.os_.put(static_cast<char>(bfm.memory_[mp]));
-        break;
-      case ',': {
-        auto const value = bfm.is_.get();
-        if (value == std::istream::traits_type::eof()) {
-          bfm.memory_[mp] = 0;
-        } else {
-          bfm.memory_[mp] = static_cast<std::uint8_t>(value);
-        }
-        break;
-      }
-      case '[':
-        if (bfm.memory_[mp] == 0) {
-          pc = jump[pc];
-        }
-        break;
-      case ']':
-        if (bfm.memory_[mp] != 0) {
-          pc = jump[pc];
-        }
-        break;
-      default:
-        break;
-      }
-      ++pc;
-    }
-}
+  std::array<std::uint8_t, memory_size> memory_;
+  std::istream& is_;
+  std::ostream& os_;
+};
