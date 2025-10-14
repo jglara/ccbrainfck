@@ -10,23 +10,26 @@ namespace rng = std::ranges;
 
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    std::string input;
+    std::string program;
     do {
-      input.clear();
+      program.clear();
+      BFMachine bf{std::cin, std::cout};    
       std::cout << "\nCCBF> ";
-      std::cin >> input;
-      std::cout << input;
-    } while (!input.empty());
+      std::cin >> program;
+      bf.run(program);
+
+    } while (!program.empty());
   } else {
     std::ifstream ifs{argv[1], std::ios::in};
+    BFMachine bf{std::cin, std::cout};
     if (!ifs.is_open()) {
       std::cerr << "Failed to open file: " << argv[1] << '\n';
       return 1;
     }
 
-    auto range = rng::subrange(std::istreambuf_iterator<char>{ifs},
-                               std::istreambuf_iterator<char>{});
-    rng::copy(range, std::ostream_iterator<char>{std::cout});
+    auto input = rng::subrange(std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{});
+    std::string program{input.begin(), input.end()};
+    bf.run(program);
   }
 
   return 0;
