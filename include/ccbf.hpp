@@ -25,8 +25,8 @@ public:
 
 void run(BFMachine bfm, rng::random_access_range auto const& program) {
     auto const program_size = rng::size(program);
-    std::vector<std::size_t> jump_forward(program_size, program_size);
-    std::vector<std::size_t> jump_backward(program_size, program_size);
+    std::vector<std::size_t> jump(program_size, program_size);
+
     std::vector<std::size_t> loop_stack;
     loop_stack.reserve(program_size);
 
@@ -40,8 +40,8 @@ void run(BFMachine bfm, rng::random_access_range auto const& program) {
         }
         auto const match = loop_stack.back();
         loop_stack.pop_back();
-        jump_forward[match] = i;
-        jump_backward[i] = match;
+        jump[match] = i;
+        jump[i] = match;
       }
     }
 
@@ -81,12 +81,12 @@ void run(BFMachine bfm, rng::random_access_range auto const& program) {
       }
       case '[':
         if (bfm.memory_[mp] == 0) {
-          pc = jump_forward[pc];
+          pc = jump[pc];
         }
         break;
       case ']':
         if (bfm.memory_[mp] != 0) {
-          pc = jump_backward[pc];
+          pc = jump[pc];
         }
         break;
       default:
