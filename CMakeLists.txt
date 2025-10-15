@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(ccbf LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Export compile commands for clangd/Eglot
@@ -39,7 +39,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
-add_executable(ccbf_tests test/tests.cpp)
+add_executable(ccbf_tests
+  test/tests.cpp
+  test/compiler_tests.cpp
+)
 target_link_libraries(ccbf_tests PRIVATE ccbf_lib GTest::gtest_main)
 include(GoogleTest)
 gtest_discover_tests(ccbf_tests)

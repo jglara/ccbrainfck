@@ -4,12 +4,42 @@
 #include <cstddef>
 #include <cstdint>
 #include <istream>
+#include <iterator>
 #include <ostream>
 #include <ranges>
 #include <stdexcept>
 #include <vector>
 
 namespace rng = std::ranges;
+
+static std::vector<std::size_t> build_jump_table(rng::input_range auto const& program) {
+  auto const program_size = rng::size(program);
+  std::vector<std::size_t> jumps(program_size, program_size);
+  std::vector<std::size_t> loop_stack;
+  loop_stack.reserve(program_size);
+  
+  for (std::size_t i = 0; i < program_size; ++i) {
+    auto const inst = program[i];
+    if (inst == '[') {
+      loop_stack.push_back(i);
+    } else if (inst == ']') {
+      if (loop_stack.empty()) {
+        throw std::runtime_error("Unmatched closing bracket in Brainfuck program");
+      }
+      auto const match = loop_stack.back();
+      loop_stack.pop_back();
+      jumps[match] = i;
+      jumps[i] = match;
+    }
+  }
+  
+  if (!loop_stack.empty()) {
+    throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
+  }
+  
+  return jumps;
+}
+
 
 class BFMachine {
  public:
@@ -76,34 +106,6 @@ class BFMachine {
   }
 
  private:
-  template <typename Program>
-  static std::vector<std::size_t> build_jump_table(Program const& program) {
-    auto const program_size = rng::size(program);
-    std::vector<std::size_t> jumps(program_size, program_size);
-    std::vector<std::size_t> loop_stack;
-    loop_stack.reserve(program_size);
-
-    for (std::size_t i = 0; i < program_size; ++i) {
-      auto const inst = program[i];
-      if (inst == '[') {
-        loop_stack.push_back(i);
-      } else if (inst == ']') {
-        if (loop_stack.empty()) {
-          throw std::runtime_error("Unmatched closing bracket in Brainfuck program");
-        }
-        auto const match = loop_stack.back();
-        loop_stack.pop_back();
-        jumps[match] = i;
-        jumps[i] = match;
-      }
-    }
-
-    if (!loop_stack.empty()) {
-      throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
-    }
-
-    return jumps;
-  }
 
   std::array<std::uint8_t, memory_size> memory_;
   std::istream& is_;
