@@ -22,11 +22,9 @@ int main(int argc, char* argv[]) {
 
     auto const input =
         rng::subrange(std::istreambuf_iterator<char>{ifs}, std::istreambuf_iterator<char>{});
-    std::string program{input.begin(), input.end()};
-    
-    std::vector<inst_t> bytecodes;
-    compile(program, std::back_inserter(bytecodes));
-    
+
+    auto bytecodes = compile(input);
+        
     BrainFckVM vm{std::cin, std::cout};
     vm.run(bytecodes);
     

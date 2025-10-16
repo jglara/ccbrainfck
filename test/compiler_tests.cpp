@@ -9,9 +9,7 @@
 namespace {
 
 std::vector<inst_t> compile_program(std::string const& program) {
-  std::vector<inst_t> bytecode;
-  compile(program, std::back_inserter(bytecode));
-  return bytecode;
+  return compile(program);
 }
 
 }  // namespace

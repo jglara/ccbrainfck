@@ -20,15 +20,17 @@ if(CCACHE_PROGRAM)
 endif()
 
 # Library and executable
-add_library(ccbf_lib INTERFACE)
-target_sources(ccbf_lib INTERFACE
+add_library(ccbf_lib
+  src/bfcompiler.cpp
+)
+target_sources(ccbf_lib PRIVATE
   include/ccbf.hpp
   include/bytecode.hpp
   include/bfvm.hpp
   include/bfcompiler.hpp
 )
-target_include_directories(ccbf_lib INTERFACE include)
-target_compile_features(ccbf_lib INTERFACE cxx_std_23)
+target_include_directories(ccbf_lib PUBLIC include)
+target_compile_features(ccbf_lib PUBLIC cxx_std_23)
 
 add_executable(ccbf src/main.cpp)
 target_link_libraries(ccbf PRIVATE ccbf_lib)

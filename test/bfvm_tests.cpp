@@ -15,9 +15,7 @@ std::string run_vm(std::string_view program, std::string_view input = {}) {
   std::istringstream in{std::string{input}};
   std::ostringstream out;
 
-  std::vector<inst_t> bytecode;
-  compile(program, std::back_inserter(bytecode));
-
+  auto bytecode = compile(program);
   BrainFckVM vm{in, out};
   vm.run(bytecode);
   return out.str();
