@@ -50,6 +50,7 @@ enable_testing()
 add_executable(ccbf_tests
   test/tests.cpp
   test/compiler_tests.cpp
+  test/bfvm_tests.cpp
 )
 target_link_libraries(ccbf_tests PRIVATE ccbf_lib GTest::gtest_main)
 include(GoogleTest)
