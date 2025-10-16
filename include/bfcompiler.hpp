@@ -46,7 +46,7 @@ namespace bfcompiler_internal {
 }
 
 void resolve_jumps(std::vector<inst_t>& bytecodes);
-void optimize_bytecodes(std::vector<inst_t>& bytecodes);
+std::vector<inst_t> optimize_bytecodes(std::vector<inst_t> const& bytecodes);
 
 } // namespace bfcompiler_internal
 
@@ -57,10 +57,9 @@ std::vector<inst_t> compile(rng::input_range auto const& program) {
   std::vector<inst_t> bytecodes;
   rng::copy(compile_program, std::back_inserter(bytecodes)); // for lack of rng::to()
 
-  bfcompiler_internal::optimize_bytecodes(bytecodes);    
-  bfcompiler_internal::resolve_jumps(bytecodes);
+  auto bytecodes_opt = bfcompiler_internal::optimize_bytecodes(bytecodes);    
+  bfcompiler_internal::resolve_jumps(bytecodes_opt);
 
 
-
-  return bytecodes;
+  return bytecodes_opt;
 }
