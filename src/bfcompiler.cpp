@@ -11,6 +11,7 @@ namespace rng = std::ranges;
 
 namespace bfcompiler_internal {
 
+// Annotate matching bracket offsets across the bytecode stream.
 void resolve_jumps(std::vector<inst_t>& bytecodes) {
   auto const program_size = bytecodes.size();
   std::vector<std::size_t> loop_stack;
@@ -41,7 +42,7 @@ void resolve_jumps(std::vector<inst_t>& bytecodes) {
 
 
 ////// First optimization
-// collapse consecutive adding operations
+// Merge consecutive pointer/memory arithmetic instructions.
 std::vector<inst_t> optimize_bytecodes_opt1(std::vector<inst_t> const& bytecodes) {
 
   static auto constexpr collapsable = [](inst_t const &i) { return (i.opcode == inst_t::op_code_t::mpadd) or (i.opcode == inst_t::op_code_t::add); };
@@ -60,7 +61,8 @@ std::vector<inst_t> optimize_bytecodes_opt1(std::vector<inst_t> const& bytecodes
 }
 
 
-/// Helper function to return loop depths in the program
+
+// Return the nesting depth for each instruction in a program.
 std::vector<size_t> loop_depths(std::vector<inst_t> const &prg) {
 
   

@@ -13,6 +13,7 @@ namespace vws = std::ranges::views;
 
 namespace bfcompiler_internal {
 
+  // Translate raw Brainfuck characters into a bytecode view.
   auto make_compile_program_view(rng::input_range auto const& program) {
   return vws::zip_transform(
              [](auto const&, auto input) {
@@ -46,9 +47,17 @@ namespace bfcompiler_internal {
          vws::filter([](auto const& i) { return i.opcode != inst_t::op_code_t::nop; });
 }
 
+// Populate jump targets by pairing brackets.
 void resolve_jumps(std::vector<inst_t>& bytecodes);
+
+// Collapse runs of pointer/memory arithmetic into single instructions.
 std::vector<inst_t> optimize_bytecodes_opt1(std::vector<inst_t> const& bytecodes);
-std::vector<inst_t> optimize_bytecodes_opt2(std::vector<inst_t> const& bytecodes);  
+
+// Replace canonical zeroing loops like [-] with set instructions.
+std::vector<inst_t> optimize_bytecodes_opt2(std::vector<inst_t> const& bytecodes);
+
+
+// Dump bytecode instructions with indentation reflecting loop nesting.
 inline void print_bytecodes(std::vector<inst_t> const& bytecodes, std::ostream& os = std::cout) {
   auto opcode_name = [](inst_t::op_code_t opcode) -> std::string_view {
     switch (opcode) {
@@ -94,6 +103,7 @@ inline void print_bytecodes(std::vector<inst_t> const& bytecodes, std::ostream& 
 
 } // namespace bfcompiler_internal
 
+// Compile a Brainfuck program into optimized bytecode.
 std::vector<inst_t> compile(rng::input_range auto const& program, size_t optims=2) {
 
   auto compile_program = bfcompiler_internal::make_compile_program_view(program);
