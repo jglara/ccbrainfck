@@ -6,6 +6,7 @@
 #include <ranges>
 #include <vector>
 #include <iostream>
+#include <string_view>
 namespace rng = std::ranges;
 namespace vws = std::ranges::views;
 
@@ -48,6 +49,48 @@ namespace bfcompiler_internal {
 void resolve_jumps(std::vector<inst_t>& bytecodes);
 std::vector<inst_t> optimize_bytecodes_opt1(std::vector<inst_t> const& bytecodes);
 std::vector<inst_t> optimize_bytecodes_opt2(std::vector<inst_t> const& bytecodes);  
+inline void print_bytecodes(std::vector<inst_t> const& bytecodes, std::ostream& os = std::cout) {
+  auto opcode_name = [](inst_t::op_code_t opcode) -> std::string_view {
+    switch (opcode) {
+      case inst_t::op_code_t::nop:
+        return "nop";
+      case inst_t::op_code_t::mpadd:
+        return "mpadd";
+      case inst_t::op_code_t::add:
+        return "add";
+      case inst_t::op_code_t::jmpz:
+        return "jmpz";
+      case inst_t::op_code_t::jmpnz:
+        return "jmpnz";
+      case inst_t::op_code_t::in:
+        return "in";
+      case inst_t::op_code_t::out:
+        return "out";
+      case inst_t::op_code_t::set:
+        return "set";
+    }
+    return "unknown";
+  };
+
+  int indent = 0;
+  for (std::size_t idx = 0; idx < bytecodes.size(); ++idx) {
+    auto const& inst = bytecodes[idx];
+
+    if (inst.opcode == inst_t::op_code_t::jmpnz) {
+      indent = std::max(indent - 1, 0);
+    }
+
+    for (int i = 0; i < indent; ++i) {
+      os << "  ";
+    }
+
+    os << '[' << idx << "] " << opcode_name(inst.opcode) << ' ' << inst.operand << '\n';
+
+    if (inst.opcode == inst_t::op_code_t::jmpz) {
+      ++indent;
+    }
+  }
+}
 
 } // namespace bfcompiler_internal
 
@@ -67,7 +110,7 @@ std::vector<inst_t> compile(rng::input_range auto const& program, size_t optims=
     bytecodes = bfcompiler_internal::optimize_bytecodes_opt2(bytecodes);
     std::cout << "Optimization 2: " << rng::size(bytecodes) << " op codes\n";
   }
-    
+  //bfcompiler_internal::print_bytecodes(bytecodes);
   bfcompiler_internal::resolve_jumps(bytecodes);
 
 

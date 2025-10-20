@@ -3,6 +3,7 @@
 #include <ranges>
 #include <numeric>
 #include <stdexcept>
+#include <iostream>
 #include <vector>
 
 namespace vws = std::ranges::views;
@@ -20,6 +21,7 @@ void resolve_jumps(std::vector<inst_t>& bytecodes) {
       loop_stack.push_back(i);
     } else if (inst.opcode == inst_t::op_code_t::jmpnz) {
       if (loop_stack.empty()) {
+        std::cerr << "Unmatched closing bracket at instruction " << i << '\n';
         throw std::runtime_error("Unmatched closing bracket in Brainfuck program");
       }
       auto const match = loop_stack.back();
@@ -30,7 +32,10 @@ void resolve_jumps(std::vector<inst_t>& bytecodes) {
   }
 
   if (!loop_stack.empty()) {
-    throw std::runtime_error("Unmatched opening bracket in Brainfuck program (eof)");
+    for (auto const unmatched_index : loop_stack) {
+      std::cerr << "Unmatched opening bracket at instruction " << unmatched_index << '\n';
+    }
+    throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
   }
 }
 
@@ -92,7 +97,11 @@ std::vector<inst_t> optimize_bytecodes_opt2(std::vector<inst_t> const & bytecode
   };
 
   auto constexpr reduce_loop = [](auto const&& loop) {
-    if (rng::distance(loop) == 3 and loop[1].opcode == inst_t::op_code_t::add and loop[1].operand == -1) {
+    if (rng::distance(loop) == 3
+        and loop[0].opcode == inst_t::op_code_t::jmpz
+        and loop[1].opcode == inst_t::op_code_t::add and loop[1].operand == -1
+        and loop[2].opcode == inst_t::op_code_t::jmpnz
+      ) {
       std::vector<inst_t> loop_opt;
       loop_opt.emplace_back(inst_t{inst_t::op_code_t::set, 0});
       return loop_opt;
