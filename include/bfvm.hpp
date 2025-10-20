@@ -47,13 +47,17 @@ class BrainFckVM {
         case inst_t::op_code_t::out:
           os_.put(static_cast<char>(memory_[mp_]));
           break;          
-        case inst_t::op_code_t::in:
+        case inst_t::op_code_t::in: {
           auto const value = is_.get();
           if (value == std::istream::traits_type::eof()) {
             memory_[mp_] = 0;
           } else {
             memory_[mp_] = static_cast<std::uint8_t>(value);
           }
+          break;
+        }
+        case inst_t::op_code_t::set:
+          memory_[mp_] = static_cast<std::uint8_t>(inst.operand);
           break;
       }
       ++pc_;

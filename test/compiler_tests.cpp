@@ -58,8 +58,8 @@ TEST(BFCompiler, GeneratesMatchingJumpTargets) {
 }
 
 TEST(BFCompiler, IgnoresNonBrainfuckCharacters) {
-  auto const bytecode = compile_program(">a+[b-]?!");
-  ASSERT_EQ(bytecode.size(), 5u);
+  auto const bytecode = compile_program(">a+b>?!");
+  ASSERT_EQ(bytecode.size(), 3u);
 
   EXPECT_EQ(bytecode[0].opcode, inst_t::op_code_t::mpadd);
   EXPECT_EQ(bytecode[0].operand, 1);
@@ -67,12 +67,14 @@ TEST(BFCompiler, IgnoresNonBrainfuckCharacters) {
   EXPECT_EQ(bytecode[1].opcode, inst_t::op_code_t::add);
   EXPECT_EQ(bytecode[1].operand, 1);
 
-  EXPECT_EQ(bytecode[2].opcode, inst_t::op_code_t::jmpz);
-  EXPECT_EQ(bytecode[2].operand, 4);
+  EXPECT_EQ(bytecode[2].opcode, inst_t::op_code_t::mpadd);
+  EXPECT_EQ(bytecode[2].operand, 1);
+}
 
-  EXPECT_EQ(bytecode[3].opcode, inst_t::op_code_t::add);
-  EXPECT_EQ(bytecode[3].operand, -1);
+TEST(BFCompiler, OptimizesZeroingLoopToSet) {
+  auto const bytecode = compile_program("[-]");
+  ASSERT_EQ(bytecode.size(), 1u);
 
-  EXPECT_EQ(bytecode[4].opcode, inst_t::op_code_t::jmpnz);
-  EXPECT_EQ(bytecode[4].operand, 2);
+  EXPECT_EQ(bytecode[0].opcode, inst_t::op_code_t::set);
+  EXPECT_EQ(bytecode[0].operand, 0);
 }
