@@ -30,11 +30,33 @@ void resolve_jumps(std::vector<inst_t>& bytecodes) {
   }
 
   if (!loop_stack.empty()) {
-    throw std::runtime_error("Unmatched opening bracket in Brainfuck program");
+    throw std::runtime_error("Unmatched opening bracket in Brainfuck program (eof)");
   }
 }
 
-std::vector<size_t> depths(std::vector<inst_t> const &prg) {
+
+////// First optimization
+// collapse consecutive adding operations
+std::vector<inst_t> optimize_bytecodes_opt1(std::vector<inst_t> const& bytecodes) {
+
+  static auto constexpr collapsable = [](inst_t const &i) { return (i.opcode == inst_t::op_code_t::mpadd) or (i.opcode == inst_t::op_code_t::add); };
+
+  auto opt_view = bytecodes |
+             vws::chunk_by([](auto const& i, auto const& j) { return (i.opcode == j.opcode) and (collapsable(i)); }) |
+             vws::transform([](auto chunk) {
+               return *rng::fold_left_first(
+                 chunk, [](auto const& acum, auto const& i) { return inst_t{acum.opcode, acum.operand + i.operand}; });
+                 });
+  std::vector<inst_t> bytecodes_opt;
+  rng::copy(opt_view, std::back_inserter(bytecodes_opt));  // for lack of rng::to()
+
+  return bytecodes_opt;
+  
+}
+
+
+/// Helper function to return loop depths in the program
+std::vector<size_t> loop_depths(std::vector<inst_t> const &prg) {
 
   
   size_t depth{0};
@@ -57,23 +79,11 @@ std::vector<size_t> depths(std::vector<inst_t> const &prg) {
 
 }
 
-std::vector<inst_t> optimize_bytecodes(std::vector<inst_t> const & bytecodes) {
+  
+//// Second optimization
+// look for optimizable loops like [-] -> mem[mp] = 0
+std::vector<inst_t> optimize_bytecodes_opt2(std::vector<inst_t> const & bytecodes) {
 
-  ////// First optimization
-  // collapse consecutive adding operations
-  static auto constexpr collapsable = [](inst_t const &i) { return (i.opcode == inst_t::op_code_t::mpadd) or (i.opcode == inst_t::op_code_t::add); };
-
-  auto opt = bytecodes |
-             vws::chunk_by([](auto const& i, auto const& j) { return (i.opcode == j.opcode) and (collapsable(i)); }) |
-             vws::transform([](auto chunk) {
-               return *rng::fold_left_first(
-                 chunk, [](auto const& acum, auto const& i) { return inst_t{acum.opcode, acum.operand + i.operand}; });
-                 });
-  std::vector<inst_t> bytecodes_opt;
-  rng::copy(opt, std::back_inserter(bytecodes_opt));  // for lack of rng::to()
-
-  //// Sec
-  // look for optimizable loops like [-] -> mem[mp] = 0
   auto constexpr chunk_by_depth = [](auto const& i_d, auto const& j_d) {
     auto [_i1, d1] = i_d;
     auto [_i2, d2] = j_d;
@@ -92,18 +102,18 @@ std::vector<inst_t> optimize_bytecodes(std::vector<inst_t> const & bytecodes) {
     }
   };
   
-  auto opt2 = vws::join(vws::zip(bytecodes_opt, depths(bytecodes_opt))
+  auto opt_view = vws::join(vws::zip(bytecodes, loop_depths(bytecodes))
                         | vws::chunk_by(chunk_by_depth)
                         | vws::transform([](auto const &&chunk) { return chunk
                               | vws::transform([] (auto const &i_d) { auto [i,_d] = i_d; return i;}); })
                         | vws::transform(reduce_loop)
     );
 
-  std::vector<inst_t> bytecodes_opt2;
-  rng::copy(opt2, std::back_inserter(bytecodes_opt2));  // for lack of rng::to()
+  std::vector<inst_t> bytecodes_opt;
+  rng::copy(opt_view, std::back_inserter(bytecodes_opt));  // for lack of rng::to()
 
-  return bytecodes_opt2;
+  return bytecodes_opt;
   
-}
+}  
 
 } // namespace bfcompiler_internal
